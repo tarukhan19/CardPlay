@@ -91,7 +91,7 @@ fun CardScreen(modifier: Modifier) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 itemsIndexed(gridList) { index, card ->
-                    val cardColor = if (index == gridSelectIndex) Color.DarkGray else Color.White
+                    val cardColor = if (index == gridSelectIndex) Color.LightGray else Color.White
                     CardDesign(card, index, cardColor) { cardIndex ->
                         if (gridSelectIndex == -1) {
                             gridSelectIndex = cardIndex
@@ -113,10 +113,10 @@ fun CardScreen(modifier: Modifier) {
                     .padding(10.dp)
             ) {
                 itemsIndexed(rowList) { index, card ->
-                    val cardColor = if (index == rowSelectIndex) Color.DarkGray else Color.White
-                    CardDesign(card, index, cardColor) { cardIndex ->
+                    var color = if (index == rowSelectIndex) Color.LightGray else Color.White
+                    CardDesign(card, index, color) {
                         if (rowSelectIndex == -1) {
-                            rowSelectIndex = cardIndex
+                            rowSelectIndex = index
                             swapCards()
                         }
                     }
@@ -149,21 +149,19 @@ fun CardScreen(modifier: Modifier) {
     }
 }
 
-
 @Composable
 fun CardDesign(
     card: CardDTO,
     index: Int,
     cardColor: Color = Color.White,
-    onClick: (Int) -> Unit
+    onItemClick: (Int) -> Unit
 ) {
+
     Card(
         modifier = Modifier
             .padding(10.dp)
             .height(150.dp)
-            .clickable {
-                onClick(index)
-            },
+            .clickable { onItemClick(index) },
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(5.dp),
         shape = CardDefaults.elevatedShape,
