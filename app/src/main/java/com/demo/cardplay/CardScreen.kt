@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -24,8 +24,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun CardScreen(modifier: Modifier) {
-    var cardList = remember {
+    var rowList = remember {
         mutableStateListOf<CardDTO>(
             CardDTO(id = 1, name = "king of diamonds", img = R.drawable.kingofdiamonds),
             CardDTO(id = 2, name = "Spades 3", img = R.drawable.spades3),
@@ -62,20 +62,19 @@ fun CardScreen(modifier: Modifier) {
         )
     }
 
-    var gridSelectedCard by remember { mutableStateOf<CardDTO?>(null) }
-    var horizontalSelectedCard by remember { mutableStateOf<CardDTO?>(null) }
+    var gridSelectIndex by remember { mutableIntStateOf(-1) } // -1 for no selection
+    var rowSelectIndex by remember { mutableIntStateOf(-1) } // -1 for no selection
 
-    fun swapCards(gridSelectedCard: CardDTO?, horizontalSelectedCard: CardDTO?) {
-        if (gridSelectedCard == null || horizontalSelectedCard == null) return
+    fun swapCards() {
+        if (gridSelectIndex == -1 || rowSelectIndex == -1) return
 
-        var gridIndex = gridList.indexOf(gridSelectedCard)
-        var horizontalIndex = cardList.indexOf(horizontalSelectedCard)
+        var temp = gridList[gridSelectIndex]
+        gridList[gridSelectIndex] = rowList[rowSelectIndex]
+        rowList[rowSelectIndex] = temp
 
-        if (gridIndex != -1 && horizontalIndex != -1) {
-            var temp = gridList[gridIndex]
-            gridList[gridIndex] = cardList[horizontalIndex]
-            cardList[horizontalIndex] = temp
-        }
+        // Reset selections after swap
+        gridSelectIndex = -1
+        rowSelectIndex = -1
 
     }
 
@@ -91,13 +90,13 @@ fun CardScreen(modifier: Modifier) {
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(gridList) { card ->
-                    CardDesign(
-                        card,
-                        onClick = { selected ->
-                            gridSelectedCard = selected
-                        },
-                    )
+                itemsIndexed(gridList) { index, card ->
+                    val cardColor = if (index == gridSelectIndex) Color.DarkGray else Color.White
+                    CardDesign(card, index, cardColor) { _, cardIndex ->
+                        if (gridSelectIndex == -1) {
+                            gridSelectIndex = cardIndex
+                        }
+                    }
                 }
             }
 
@@ -113,19 +112,21 @@ fun CardScreen(modifier: Modifier) {
                     .fillMaxWidth()
                     .padding(10.dp)
             ) {
-                items(cardList) { card ->
-                    CardDesign(card, onClick = { selected ->
-                        horizontalSelectedCard = selected
-                        swapCards(gridSelectedCard, horizontalSelectedCard)
-
-                        gridSelectedCard = null
-                        horizontalSelectedCard = null
-                    })
+                itemsIndexed(rowList) { index, card ->
+                    val cardColor = if (index == rowSelectIndex) Color.DarkGray else Color.White
+                    CardDesign(card, index, cardColor) { _, cardIndex ->
+                        if (rowSelectIndex == -1) {
+                            rowSelectIndex = cardIndex
+                            swapCards()
+                        }
+                    }
                 }
             }
 
             Button(
                 onClick = {
+                    rowSelectIndex = -1
+                    gridSelectIndex = -1
                     gridList.shuffle()
                 },
                 modifier = Modifier
@@ -150,16 +151,20 @@ fun CardScreen(modifier: Modifier) {
 
 
 @Composable
-fun CardDesign(card: CardDTO, onClick: (CardDTO) -> Unit) {
+fun CardDesign(
+    card: CardDTO,
+    index: Int,
+    cardColor: Color = Color.White,
+    onClick: (CardDTO, Int) -> Unit
+) {
     Card(
         modifier = Modifier
             .padding(10.dp)
-            .background(Color.White)
             .height(150.dp)
             .clickable {
-                onClick(card)
+                onClick(card, index)
             },
-        colors = CardDefaults.cardColors(Color.White),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(5.dp),
         shape = CardDefaults.elevatedShape,
 
